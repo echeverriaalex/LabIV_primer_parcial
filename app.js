@@ -3,14 +3,14 @@ const urlStudent = "https://utn-lubnan-api-2.herokuapp.com/api/Student";
 const urlStudentDelete = "https://utn-lubnan-api-2.herokuapp.com/api/Student/";
 
 let getAllCareers = function(url){
-    return new Promise(function( resolve, reject){
+    return new Promise(function(resolve, reject){
         var request = new XMLHttpRequest();
         request.open("GET", url);
-        request.responseType = "json"
+        request.responseType = "json";
 
         request.onload = function(){
             if(request.status == 200){
-                resolve(request.response)
+                resolve(request.response);
             }
             else{
                 reject(Error("Cannot get career list. " + request.statusText));
@@ -18,7 +18,7 @@ let getAllCareers = function(url){
         }
 
         request.onerror = function(){
-            reject(Error("Problem network"))
+            reject(Error("Problem network"));
         }
 
         request.send();
@@ -26,19 +26,10 @@ let getAllCareers = function(url){
 }
 
 
-async function getArrayCareer(){
-    await getAllCareers(urlCareer)
+function getArrayCareer(){
+    return getAllCareers(urlCareer)
         .then((response)=>{
-            let careerActives = response.filter(career => (career.active == true))
-            console.log('carrer then '+ careerActives);
-            careerActives.forEach(c=>{
-                console.log(c.name);
-            })
-
-            console.log('tyoe then ' + typeof(careerActives));
-
-            
-            return careerActives;
+            return response.filter(career => (career.active == true))
         })
         .catch((error)=>{
             console.log(error);
@@ -71,10 +62,35 @@ let getAllStudent = function(){
 
 
 function getArrayStudent(){
-    
-    getAllStudent(urlStudent)
+    return getAllStudent(urlStudent)
         .then((response)=>{
-            // console.log(response);
+
+            // ordenar por lastname ascendente alfabeticamente
+            return response.sort((a, b)=>{
+                if(a.lastName < b.lastName)
+                    return -1;
+                else if(a.lastName > b.lastName)
+                    return 1;
+                else
+                    return 0;
+            })
+
+            /*
+            console.log("Estoy en then Ordene por lastname");
+
+            console.log(response);
+
+            students = response;
+
+            console.log("fin del then");
+
+            //let tbody = document.getElementById("data-list");
+            //tbody.innerHTML = response
+
+            return students;
+
+            
+            
             let studentInscripted = []
             response.forEach(student => {
                 if(student.careerId){
@@ -83,6 +99,7 @@ function getArrayStudent(){
             });
             console.log(studentInscripted);
             return studentInscripted;
+            */
         })
         .catch((error)=>{
             console.log(error);
@@ -130,6 +147,18 @@ function deleteStudent(id, url){
 
 
 function createRow(career, student){
+
+    /*
+    <tr>
+        <th scope="row">3</th>
+        <td>Research and Development</td>
+        <td>Dowgill</td>
+        <td>Ronnica</td>                
+        <td>rdowgilla@printfriendly.com</td>
+        <td><button type="button" class="btn btn-danger btn-sm">Delete</button></td>
+    </tr>
+    */
+
     let tr = document.createElement('tr')
 
     let th = document.createElement('th')
@@ -149,7 +178,6 @@ function createRow(career, student){
     tdF.innerHTML = student.firstName
     tr.append(tdF)
 
-
     let tdE = document.createElement('td')
     tdE.innerHTML = student.email
     tr.append(tdE)
@@ -157,79 +185,73 @@ function createRow(career, student){
     let button = document.createElement('button')
     button.setAttribute('class', "btn btn-danger btn-sm")
     button.innerHTML = "Delete"
+    
+    // agrego evento a cada boton que genero
+    button.addEventListener('click', ()=>{
+        deleteStudent(student.studentId, urlStudentDelete)
+        let tbody = document.getElementById("data-list");
+        tbody.innerHTML="" // pongo la tabla vacia
+        // con esta funcion dibujo nuevamente la tabla 
+        // (la actualizo cada vez que se borra un registro)
+        addToTable()
+    })
 
     let tdB = document.createElement('td')
     tdB.append(button)
     tr.append(tdB)
 
-    tr.addEventListener('click', ()=>{
-
-        deleteStudent(student.id, urlStudentDelete)
-        addToTable()
-    })
-
     return tr;
-
-    /*
-    <tr>
-        <th scope="row">3</th>
-        <td>Research and Development</td>
-        <td>Dowgill</td>
-        <td>Ronnica</td>                
-        <td>rdowgilla@printfriendly.com</td>
-        <td><button type="button" class="btn btn-danger btn-sm">Delete</button></td>
-    </tr>
-
-    */
 }
 
 
- async function addToTable(){
-    
+async function addToTable(){
+
     let tbody = document.getElementById("data-list");
-    let careers = await getArrayCareer()
-    console.log('add');
-    console.log(careers);
-    
-    console.log('typo' + typeof(careers));
 
+    // Con esta funcion anda bien directamente obteniendo las careers
+    // que es la primer funcion que obtiene la info de la api y retorna una promesa
+    //let careers =  await getAllCareers(urlCareer)
 
-    let students = getArrayStudent();
-    console.log(students);
-
-    console.log('recorr los array o');
-
-
-
-    career = {careerId: 1, name: 'Marketing', active: true}
-
-    student = {studentId: 1, careerId: 1, firstName: 'Oralle', lastName: 'Jerwood', email: 'ojerwood0@desdev.cn'}
-
-    let row = createRow(career, student)
-    tbody.appendChild(row);
+    // Estas funciones gets tienen dentro una funcion que retorna una promesa
+    // agarra esa promesa (un array) y los procesa y estas tambien devuelven
+    // una promesa, entonces las tengo que esperar para que me retornen ese 
+    // array ya procesado y recien aca lo puedo recorrer y mostrar en la tabla
+    let careerList = await getArrayCareer()
+    let studentList = await getArrayStudent()
 
     /*
+    careerList.forEach(career => {
+        console.log(career.name + " " + career.active);
+    });
 
-    careers.forEach((career) => {
-        
-        students.forEach((student) =>{
-            
+    console.log("Student list ");
+
+    studentList.forEach(student =>{
+        //console.log(student.firstName + " " + student.lastName);
+    })
+    */
+    
+    /*
+    console.log("add get student");
+    await getArrayStudent().then((res) => {
+        console.log(res);
+    });
+
+    // esto fue una prueba de como dibujaria una fila en la tabla
+    career = {careerId: 1, name: 'Marketing', active: true}
+    student = {studentId: 1, careerId: 1, firstName: 'Oralle', lastName: 'Jerwood', email: 'ojerwood0@desdev.cn'}
+    let row = createRow(career, student)
+    tbody.appendChild(row);
+    */
+
+    studentList.forEach((student) =>{
+        careerList.forEach((career) => {
             if(career.careerId == student.careerId){
-                console.log('en el if de add');
                 let row = createRow(career, student)
                 tbody.appendChild(row);
-
-                
             }
         });
-    });  
-
-    */
+    });
 }
 
 addToTable();
-
-
-
-
-
