@@ -2,6 +2,7 @@ const urlCareer = "https://utn-lubnan-api-2.herokuapp.com/api/Career";
 const urlStudent = "https://utn-lubnan-api-2.herokuapp.com/api/Student";
 const urlStudentDelete = "https://utn-lubnan-api-2.herokuapp.com/api/Student/";
 
+// Retorno una promesa que contiene info de la API
 let getAllCareers = function(url){
     return new Promise(function(resolve, reject){
         var request = new XMLHttpRequest();
@@ -25,7 +26,7 @@ let getAllCareers = function(url){
     })
 }
 
-
+// Proceso la respuesta de la promesa y retorno la promesa con la info filtrada
 function getArrayCareer(){
     return getAllCareers(urlCareer)
         .then((response)=>{
@@ -36,7 +37,7 @@ function getArrayCareer(){
         })
 }
 
-
+// Retorno una promesa que contiene info de la API
 let getAllStudent = function(){
     return new Promise(function(resolve, reject){
         var request = new XMLHttpRequest();
@@ -60,11 +61,10 @@ let getAllStudent = function(){
     })
 }
 
-
+// Proceso la respuesta de la promesa y retorno la promesa con la info ordenada
 function getArrayStudent(){
     return getAllStudent(urlStudent)
         .then((response)=>{
-
             // ordenar por lastname ascendente alfabeticamente
             return response.sort((a, b)=>{
                 if(a.lastName < b.lastName)
@@ -74,40 +74,14 @@ function getArrayStudent(){
                 else
                     return 0;
             })
-
-            /*
-            console.log("Estoy en then Ordene por lastname");
-
-            console.log(response);
-
-            students = response;
-
-            console.log("fin del then");
-
-            //let tbody = document.getElementById("data-list");
-            //tbody.innerHTML = response
-
-            return students;
-
-            
-            
-            let studentInscripted = []
-            response.forEach(student => {
-                if(student.careerId){
-                    studentInscripted.push(student)
-                }
-            });
-            console.log(studentInscripted);
-            return studentInscripted;
-            */
         })
         .catch((error)=>{
             console.log(error);
         })
 }
 
-
-
+// Retorno una promesa que contiene un mensaje de la API
+// en este caso recibo null pero en otras puedo recibir otra info
 let deleteStudentById = function(idStudent, url){
     return new Promise(function(resolve, reject){
         var request = new XMLHttpRequest();
@@ -131,11 +105,14 @@ let deleteStudentById = function(idStudent, url){
     })
 }
 
-
-function deleteStudent(id, url){
-    deleteStudentById(id, url)
+// Cuando llamo a esta funcion no tengo que ponerle await por mas que
+// retorne una promesa, quizas sea porque ejecuta y no devuelve ninguna info
+// es diferente a las de traer info de la API
+function deleteStudent(student, url){
+    deleteStudentById(student.studentId, url)
         .then((response)=>{
             console.log('Student deleted ' + response);
+            alert(`The student ${student.studentId} ${student.firstName} ${student.lastName} was deleted successfull` )
         })
         .catch((error)=>{
             console.log(error);
@@ -188,7 +165,7 @@ function createRow(career, student){
     
     // agrego evento a cada boton que genero
     button.addEventListener('click', ()=>{
-        deleteStudent(student.studentId, urlStudentDelete)
+        deleteStudent(student, urlStudentDelete)
         let tbody = document.getElementById("data-list");
         tbody.innerHTML="" // pongo la tabla vacia
         // con esta funcion dibujo nuevamente la tabla 
@@ -199,10 +176,8 @@ function createRow(career, student){
     let tdB = document.createElement('td')
     tdB.append(button)
     tr.append(tdB)
-
     return tr;
 }
-
 
 async function addToTable(){
 
@@ -212,14 +187,24 @@ async function addToTable(){
     // que es la primer funcion que obtiene la info de la api y retorna una promesa
     //let careers =  await getAllCareers(urlCareer)
 
-    // Estas funciones gets tienen dentro una funcion que retorna una promesa
+    // Estas funciones gets contienen una funcion que retorna una promesa
     // agarra esa promesa (un array) y los procesa y estas tambien devuelven
     // una promesa, entonces las tengo que esperar para que me retornen ese 
     // array ya procesado y recien aca lo puedo recorrer y mostrar en la tabla
     let careerList = await getArrayCareer()
     let studentList = await getArrayStudent()
+    
+    studentList.forEach((student) =>{
+        careerList.forEach((career) => {
+            if(career.careerId == student.careerId){
+                let row = createRow(career, student)
+                tbody.appendChild(row);
+            }
+        });
+    });
 
-    /*
+    /*  // Aca estan los test que hacia para descubrir el problema que tenia
+        // con las funciones getArrayCareer y getArrayStudent
     careerList.forEach(career => {
         console.log(career.name + " " + career.active);
     });
@@ -243,15 +228,6 @@ async function addToTable(){
     let row = createRow(career, student)
     tbody.appendChild(row);
     */
-
-    studentList.forEach((student) =>{
-        careerList.forEach((career) => {
-            if(career.careerId == student.careerId){
-                let row = createRow(career, student)
-                tbody.appendChild(row);
-            }
-        });
-    });
 }
 
 addToTable();
